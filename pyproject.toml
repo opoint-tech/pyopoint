@@ -1,0 +1,29 @@
+[project]
+name = "opoint-safefeed-client"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Karl Erik Hofseth", email = "karl.e.hofseth@infomedia.dk" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "aiohttp[speedups]>=3.11.11",
+    "asyncio>=3.4.3",
+]
+
+[project.scripts]
+opoint-safefeed-client = "opoint_safefeed_client:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.14.1",
+    "ruff>=0.9.1",
+]
+
+[tool.mypy]
+strict = true
