@@ -236,7 +236,7 @@ wheels = [
 ]
 
 [[package]]
-name = "opoint-safefeed-client"
+name = "opoint"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

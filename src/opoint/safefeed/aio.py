@@ -5,7 +5,7 @@ from typing import Any, Literal, Self, TypedDict
 
 import aiohttp
 
-from opoint_safefeed_client.api import FeedResponse
+from opoint.safefeed.api import FeedResponse
 
 
 class SafefeedOptions(TypedDict, total=False):
@@ -15,8 +15,10 @@ class SafefeedOptions(TypedDict, total=False):
     base_url: str
     batch_size: int
 
+class SafefeedClient:
+    """Asynchronous Safefeed client using aiohttp
 
-class OpointSafefeedClient:
+    """
     key: str
     doc_format: Literal["json"] | Literal["xml"]
     interval: int
@@ -87,7 +89,7 @@ class OpointSafefeedClient:
 
 
 async def main() -> None:
-    async with OpointSafefeedClient("sample-token") as client:
+    async with SafefeedClient("sample-token") as client:
         print(await client._fetch_articles())
 
 
