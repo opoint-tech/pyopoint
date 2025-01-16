@@ -5,6 +5,7 @@ import datetime
 from typing import Any, Literal, Self, TypedDict, cast
 
 import aiohttp
+from aiohttp.client import _BaseRequestContextManager
 
 from opoint.safefeed.api import FeedResponse
 
@@ -46,7 +47,9 @@ class SafefeedClient:
         self.timeout = timeout
         self.base_url = base_url
         self.batch_size = batch_size
+        self.lastid = 0
         self._session = aiohttp.ClientSession()
+        self._last_request_time = datetime.datetime(1970, 1, 1)
 
     async def __aenter__(self) -> Self:
         return self
@@ -56,7 +59,7 @@ class SafefeedClient:
 
     async def _fetch_articles(
         self, lastid: int | None = None, size: int | None = None
-    ) -> aiohttp.ClientResponse:
+    ) -> _BaseRequestContextManager[aiohttp.ClientResponse]:
         now = datetime.datetime.now()
         target = self._last_request_time + datetime.timedelta(seconds=self.interval)
         if now < target and self._last_num < 0.9 * self.batch_size:
@@ -64,7 +67,7 @@ class SafefeedClient:
 
         self._last_request_time = datetime.datetime.now()
 
-        async with await self._session.get(
+        return self._session.get(
             self.base_url,
             params={
                 "key": self.key,
@@ -72,43 +75,42 @@ class SafefeedClient:
                 "lastid": lastid or self.lastid,
                 "num_art": size or self.batch_size,
             },
-        ) as response:
-            logging.info(response.status)
-            return response
+        )
 
     async def get_articles_json(
         self, lastid: int | None = None, size: int | None = None
     ) -> FeedResponse | None:
         """Get the next batch of articles"""
-        response = await self._fetch_articles(lastid, size)
-        data: FeedResponse
-        try:
-            # TODO: Check HTTP status codes and stuff
-            data = cast(FeedResponse, await response.json())
-        except aiohttp.ContentTypeError:
-            logging.error("Content-Type is not 'application/json'")
-            return None
-        except UnicodeDecodeError:
-            logging.error("Could not decode Unicode data. This is very bad!")
-            return None
-        except json.JSONDecodeError as e:
-            logging.error("Could not decode JSON response body.", e)
-            logging.debug("Full response body follows:")
-            logging.debug(await response.text())
-            return None
+        async with await self._fetch_articles(lastid, size) as response:
+            data: FeedResponse
+            try:
+                # TODO: Check HTTP status codes and stuff
+                data = cast(FeedResponse, await response.json())
+            except aiohttp.ContentTypeError:
+                logging.error("Content-Type is not 'application/json'")
+                return None
+            except UnicodeDecodeError:
+                logging.error("Could not decode Unicode data. This is very bad!")
+                return None
+            except json.JSONDecodeError as e:
+                logging.error("Could not decode JSON response body.", e)
+                logging.debug("Full response body follows:")
+                logging.debug(await response.text())
+                return None
 
-        try:
-            self.lastid = data["searchresult"]["document"][-1]["id_delivery"]
-            self._last_num = data["searchresult"]["documents"]
-        except KeyError:
-            logging.warn(
-                "Could not update internal state. JSON response is probably malformed somehow."
-            )
+            try:
+                self.lastid = data["searchresult"]["document"][-1]["id_delivery"]
+                self._last_num = data["searchresult"]["documents"]
+            except KeyError:
+                logging.warn(
+                    "Could not update internal state. JSON response is probably malformed somehow."
+                )
 
-        return data
+            return data
 
     async def get_articles_xml(self) -> str:
-        return await (await self._fetch_articles()).text()
+        async with await self._fetch_articles() as response:
+            return await response.text()
 
     # async def seek(self, timestamp: int) -> int:
     #     return 0
