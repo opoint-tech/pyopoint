@@ -115,6 +115,12 @@ class SafefeedClient:
     # async def seek(self, timestamp: int) -> int:
     #     return 0
 
+    def __aiter__(self) -> Self:
+        return self
+
+    async def __anext__(self) -> FeedResponse | None:
+        return await self.get_articles_json()
+
 
 async def main() -> None:
     async with SafefeedClient("sample-token") as client:
