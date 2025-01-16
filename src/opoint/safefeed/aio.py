@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Any, Literal, Self, TypedDict
+from typing import Any, Literal, Self, TypedDict, cast
 
 import aiohttp
 
@@ -15,17 +15,17 @@ class SafefeedOptions(TypedDict, total=False):
     base_url: str
     batch_size: int
 
-class SafefeedClient:
-    """Asynchronous Safefeed client using aiohttp
 
-    """
+class SafefeedClient:
+    """Asynchronous Safefeed client using aiohttp"""
+
     key: str
     doc_format: Literal["json"] | Literal["xml"]
     interval: int
     timeout: int
     base_url: str
     batch_size: int
-    position: tuple[int, int]
+    lastid: int
     _session: aiohttp.ClientSession
 
     def __init__(
@@ -52,17 +52,15 @@ class SafefeedClient:
         return await self._session.close()
 
     async def _fetch_articles(
-        self, start_id: tuple[int, int] | None = None, size: int | None = None
+        self, lastid: int | None = None, size: int | None = None
     ) -> aiohttp.ClientResponse:
         async with await self._session.get(
             self.base_url,
             params={
                 "key": self.key,
                 "doc_format": self.doc_format,
-                "lastid": "_".join(
-                    str(i) for i in (start_id if start_id else self.position)
-                ),
-                "num_art": size if size else self.batch_size,
+                "lastid": lastid or self.lastid,
+                "num_art": size or self.batch_size,
             },
         ) as response:
             logging.info(response.status)
@@ -72,7 +70,7 @@ class SafefeedClient:
         response = await self._fetch_articles()
         data: FeedResponse
         try:
-            data = await response.json()
+            data = cast(FeedResponse, await response.json())
         except aiohttp.ContentTypeError:
             logging.error("Content-Type is not 'application/json'")
         except UnicodeDecodeError:
@@ -82,10 +80,15 @@ class SafefeedClient:
             logging.debug("Full response body follows:")
             logging.debug(await response.text())
 
+        self.lastid = data["searchresult"]["document"][-1]["id_delivery"]
+
         return data
 
     async def get_articles_xml(self) -> str:
         return await (await self._fetch_articles()).text()
+
+    async def seek(self, timestamp: int) -> int:
+        return 0
 
 
 async def main() -> None:
