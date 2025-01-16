@@ -30,7 +30,7 @@ class SafefeedClient:
     lastid: int
     _session: aiohttp.ClientSession
     _last_num: int
-    _last_request_time: datetime.datetime
+    _last_request_time: datetime.datetime | None = None
 
     def __init__(
         self,
@@ -49,7 +49,6 @@ class SafefeedClient:
         self.batch_size = batch_size
         self.lastid = 0
         self._session = aiohttp.ClientSession()
-        self._last_request_time = datetime.datetime(1970, 1, 1)
 
     async def __aenter__(self) -> Self:
         return self
@@ -61,7 +60,7 @@ class SafefeedClient:
         self, lastid: int | None = None, size: int | None = None
     ) -> _BaseRequestContextManager[aiohttp.ClientResponse]:
         now = datetime.datetime.now()
-        target = self._last_request_time + datetime.timedelta(seconds=self.interval)
+        target = self._last_request_time + datetime.timedelta(seconds=self.interval) if self._last_request_time else now
         if now < target and self._last_num < 0.9 * self.batch_size:
             await asyncio.sleep((target - now).total_seconds())
 

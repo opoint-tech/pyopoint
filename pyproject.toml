@@ -9,12 +9,19 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "aiohttp[speedups]>=3.11.11",
     "asyncio>=3.4.3",
 ]
 
 [project.scripts]
 opoint-safefeed-client = "opoint_safefeed_client:main"
+
+[project.optional-dependencies]
+requests = [
+    "requests>=2.32.3",
+]
+aio = [
+    "aiohttp[speedups]>=3.11.11",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -27,6 +34,7 @@ packages = ["src/opoint"]
 dev = [
     "mypy>=1.14.1",
     "ruff>=0.9.1",
+    "types-requests>=2.32.0.20241016",
 ]
 
 [tool.mypy]
