@@ -27,7 +27,7 @@ class SafefeedClient:
     timeout: int
     base_url: str
     batch_size: int
-    lastid: int
+    lastid: int | None
     _session: aiohttp.ClientSession
     _last_num: int
     _last_request_time: datetime.datetime | None = None
@@ -38,6 +38,7 @@ class SafefeedClient:
         doc_format: Literal["json"] | Literal["xml"] = "json",
         interval: int = 10,
         timeout: int = 5,
+        lastid: int | None = None,
         base_url: str = "https://feed.opoint.com/safefeed.php",
         batch_size: int = 500,
     ) -> None:
@@ -47,7 +48,7 @@ class SafefeedClient:
         self.timeout = timeout
         self.base_url = base_url
         self.batch_size = batch_size
-        self.lastid = 0
+        self.lastid = lastid
         self._session = aiohttp.ClientSession()
 
     async def __aenter__(self) -> Self:
@@ -71,12 +72,12 @@ class SafefeedClient:
             params={
                 "key": self.key,
                 "doc_format": self.doc_format,
-                "lastid": lastid or self.lastid,
+                "lastid": i if (i := lastid or self.lastid) is not None else '?',
                 "num_art": size or self.batch_size,
             },
         )
 
-    async def get_articles_json(
+    async def get_articles(
         self, lastid: int | None = None, size: int | None = None
     ) -> FeedResponse | None:
         """Get the next batch of articles"""
@@ -98,8 +99,8 @@ class SafefeedClient:
                 return None
 
             try:
-                self.lastid = data["searchresult"]["document"][-1]["id_delivery"]
-                self._last_num = data["searchresult"]["documents"]
+                self.lastid = data["searchresult"]["search_start"]
+                self._last_num = data["searchresult"].get("documents", 0)
             except KeyError:
                 logging.warn(
                     "Could not update internal state. JSON response is probably malformed somehow."
@@ -118,7 +119,7 @@ class SafefeedClient:
         return self
 
     async def __anext__(self) -> FeedResponse | None:
-        return await self.get_articles_json()
+        return await self.get_articles()
 
 
 async def main() -> None:
