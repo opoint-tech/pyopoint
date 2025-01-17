@@ -38,7 +38,7 @@ class SafefeedClient:
         self,
         key: str,
         interval: int | None = None,
-        timeout: int = 10,
+        timeout: int = 30,
         lastid: int | None = None,
         base_url: str = "https://feed.opoint.com/safefeed.php",
         num_art: int | None = None,
@@ -52,7 +52,7 @@ class SafefeedClient:
         self.lastid = lastid
         self.expected_rate = expected_rate
         self._session = aiohttp.ClientSession()
-        if interval or num_art:
+        if interval or num_art or expected_rate:
             self._autoconfig = False
 
     async def __aenter__(self) -> Self:
@@ -64,7 +64,7 @@ class SafefeedClient:
     @property
     def is_behind(self) -> bool:
         """Denotes whether the client believes that it is "behind" and currently catching up the the current, based on recent responses."""
-        return self._last_num > (self.num_art) * 0.9
+        return self._last_num > (self.num_art) * 0.95
 
     async def _fetch_articles(
         self, lastid: int | None = None, size: int | None = None
@@ -76,7 +76,11 @@ class SafefeedClient:
             else now
         )
         if now < target and not self.is_behind:
+            logging.info(
+                f"Sleeping {(target - now).total_seconds()} seconds to respect interval setting"
+            )
             await asyncio.sleep((target - now).total_seconds())
+            logging.info("Proceeding")
 
         self._last_request_time = datetime.datetime.now()
 
@@ -115,17 +119,29 @@ class SafefeedClient:
             try:
                 self.lastid = data["searchresult"]["search_start"]
                 self._last_num = data["searchresult"].get("documents", 0)
-                self.expected_rate = self.expected_rate or data["searchresult"].get(
-                    "expected_rate"
-                )
-                if self.expected_rate and self._autoconfig:
+                logging.debug(f"Got {data['searchresult']['documents']} articles")
+                if self._autoconfig and not self.is_behind:
                     logging.debug("Configuring parameters")
-                    self.interval = 70 / self.expected_rate**0.5
-                    self.num_art = 100 * self.expected_rate**0.5
+                    self.expected_rate = 0.9 * (self.expected_rate or 40) + 0.1 * (
+                        data["searchresult"].get("expected_rate")
+                        or (
+                            data["searchresult"]["documents"]
+                            and (data["searchresult"]["documents"] / self.interval)
+                            or self.expected_rate
+                            or 40
+                        )
+                    )
+                    self.interval = min(60 / self.expected_rate**0.5, 900)
+                    self.num_art = max(120 * self.expected_rate**0.5, 50.0)
 
-                logging.debug(
-                    f"expected_rate: {self.expected_rate}, interval: {self.interval}, num_art: {self.num_art}"
-                )
+                if not self.is_behind:
+                    logging.debug(
+                        f"expected_rate: {(self.expected_rate or 0)}/s, interval: {self.interval}, num_art: {self.num_art}"
+                    )
+                else:
+                    logging.debug(
+                        "Is behind, cannot estimate rate or configure interval/num_art"
+                    )
             except KeyError:
                 logging.warn(
                     "Could not update internal state. JSON response is probably malformed somehow."
