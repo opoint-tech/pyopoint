@@ -1,4 +1,4 @@
-from typing import Literal, TypedDict
+from typing import Literal, Required, TypedDict
 
 
 class MediaType(TypedDict):
@@ -105,12 +105,13 @@ class Article(TypedDict):
     screenshots: list[str]  # TODO: Check
 
 
-class SearchResult(TypedDict):
-    documents: int
+class SearchResult(TypedDict, total=False):
+    documents: Required[int]
+    expected_rate: float
     first_timestamp: int
     last_timestamp: int
     generated_timestamp: int
-    search_start: int
+    search_start: Required[int]
     context: str
     count: int
     cacheage: int  # TODO: Check
