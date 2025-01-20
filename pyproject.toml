@@ -7,13 +7,13 @@ license = "GPL-3.0-or-later"
 authors = [
     { name = "Karl Erik Hofseth", email = "karl.e.hofseth@infomedia.dk" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
     "asyncio>=3.4.3",
 ]
 
 [project.scripts]
-opoint-safefeed-client = "opoint_safefeed_client:main"
+# opoint = "opoint.safefeed:main"
 
 [project.optional-dependencies]
 requests = [
@@ -39,3 +39,4 @@ dev = [
 
 [tool.mypy]
 strict = true
+python_version = "3.11"
