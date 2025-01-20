@@ -5,7 +5,6 @@ import datetime
 from typing import Any, Literal, Self, TypedDict, cast
 
 import aiohttp
-from aiohttp.client import _BaseRequestContextManager
 
 from opoint.safefeed.api import FeedResponse
 
@@ -66,9 +65,10 @@ class SafefeedClient:
         """Denotes whether the client believes that it is "behind" and currently catching up the the current, based on recent responses."""
         return self._last_num > (self.num_art) * 0.95
 
-    async def _fetch_articles(
+    async def get_articles(
         self, lastid: int | None = None, size: int | None = None
-    ) -> _BaseRequestContextManager[aiohttp.ClientResponse]:
+    ) -> FeedResponse | None:
+        """Get the next batch of articles"""
         now = datetime.datetime.now()
         target = (
             self._last_request_time + datetime.timedelta(seconds=self.interval)
@@ -84,7 +84,7 @@ class SafefeedClient:
 
         self._last_request_time = datetime.datetime.now()
 
-        return self._session.get(
+        async with self._session.get(
             self.base_url,
             params={
                 "key": self.key,
@@ -93,13 +93,7 @@ class SafefeedClient:
                 "num_art": size or self.num_art,
             },
             timeout=aiohttp.ClientTimeout(total=self.timeout),
-        )
-
-    async def get_articles(
-        self, lastid: int | None = None, size: int | None = None
-    ) -> FeedResponse | None:
-        """Get the next batch of articles"""
-        async with await self._fetch_articles(lastid, size) as response:
+        ) as response:
             data: FeedResponse
             try:
                 # TODO: Check HTTP status codes and stuff
@@ -161,7 +155,7 @@ class SafefeedClient:
 
 async def main() -> None:
     async with SafefeedClient("sample-token") as client:
-        print(await client._fetch_articles())
+        print(await client.get_articles())
 
 
 if __name__ == "__main__":
