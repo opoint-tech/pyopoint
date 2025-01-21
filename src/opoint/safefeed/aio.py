@@ -18,7 +18,22 @@ class SafefeedOptions(TypedDict, total=False):
 
 
 class SafefeedClient:
-    """Asynchronous Safefeed client using aiohttp"""
+    """
+    Asynchronous Safefeed client using aiohttp.
+
+    By default, will adjust interval and num_art to attempt
+    to get relatively consistent batches at consistent intervals.
+
+    If configured with expected_rate, will use that to set
+    interval and num_art statically.
+
+    :int interval: interval at which to start requests. Ignored when fallen behind. Keep as None unless you have reason to change it.
+    :int timeout: request timeout.
+    :int lastid: lastid parameter obtained from a previous request. 0 to start from the oldest article still in the feed, None to start at the current newest.
+    :str base_url: the feed base url.
+    :int num_art: number of articles to request each time. Only change if you have limitations in processing.
+    :float expected_rate: expected rate of articles per second. Keep as None unless you have reason to change it.
+    """
 
     key: str
     doc_format: Literal["json"]
