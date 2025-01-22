@@ -7,7 +7,7 @@ license = "GPL-3.0-or-later"
 authors = [
     { name = "Karl Erik Hofseth", email = "karl.e.hofseth@infomedia.dk" }
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "asyncio>=3.4.3",
 ]
@@ -39,4 +39,4 @@ dev = [
 
 [tool.mypy]
 strict = true
-python_version = "3.11"
+python_version = "3.12"
