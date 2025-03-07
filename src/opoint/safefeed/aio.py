@@ -58,7 +58,7 @@ class SafefeedClient:
         base_url: str = "https://feed.opoint.com/safefeed.php",
         num_art: int | None = None,
         expected_rate: float | None = None,
-        log_level: int = logging.ERROR
+        log_level: int = logging.ERROR,
     ) -> None:
         global logger
         self.key = key
@@ -88,7 +88,8 @@ class SafefeedClient:
         """Get the next batch of articles"""
         now = datetime.datetime.now()
         target = (
-            self._last_request_time + datetime.timedelta(seconds=self.config.interval.value)
+            self._last_request_time
+            + datetime.timedelta(seconds=self.config.interval.value)
             if self._last_request_time
             else now
         )
@@ -157,12 +158,3 @@ class SafefeedClient:
 
     async def __anext__(self) -> FeedResponse | None:
         return await self.get_articles()
-
-
-async def main() -> None:
-    async with SafefeedClient("sample-token") as client:
-        print(await client.get_articles())
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

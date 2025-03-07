@@ -2,7 +2,7 @@
 
 Catch cases where e.g. files are missing so the import doesn't work."""
 
-from opoint.safefeed import SafefeedClient
+from opoint.safefeed.sync import SafefeedClient
 
 client = SafefeedClient("example_key")
 

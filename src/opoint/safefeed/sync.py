@@ -20,7 +20,7 @@ class SafefeedOptions(TypedDict, total=False):
     num_art: int
 
 
-class SyncSafefeedClient:
+class SafefeedClient:
     """
     Synchronous Safefeed client using requests.
 
@@ -57,7 +57,7 @@ class SyncSafefeedClient:
         base_url: str = "https://feed.opoint.com/safefeed.php",
         num_art: int | None = None,
         expected_rate: float | None = None,
-        log_level: int = logging.ERROR
+        log_level: int = logging.ERROR,
     ) -> None:
         global logger
         self.key = key
@@ -148,12 +148,3 @@ class SyncSafefeedClient:
 
     def __next__(self) -> FeedResponse | None:
         return self.get_articles()
-
-
-def main() -> None:
-    client = SyncSafefeedClient("sample-token")
-    print(client.get_articles())
-
-
-if __name__ == "__main__":
-    main()
