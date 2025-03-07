@@ -1,7 +1,7 @@
 [project]
 name = "opoint"
 version = "0.1.0"
-description = "Add your description here"
+description = "Client library for Opoint products"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 authors = [
