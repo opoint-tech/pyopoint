@@ -23,7 +23,7 @@ The Safefeed client comes in two versions, one using `asyncio` and `aiohttp`, an
 Asyncio example:
 
 ```python
-from opoint.safefeed import SafefeedClient
+from opoint.safefeed.aio import SafefeedClient
 
 # Using as an iterator
 async with SafefeedClient("your-token-here") as client:
@@ -40,9 +40,9 @@ async with SafefeedClient("your-token-here") as client:
 
 Requests example:
 ```python
-from opoint.safefeed import SyncSafefeedClient
+from opoint.safefeed.sync import SafefeedClient
 
-client = SyncSafefeedClient("your-token-here")
+client = SafefeedClient("your-token-here")
 for batch in client:
     my_process_batch(batch)
 ```
