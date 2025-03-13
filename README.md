@@ -9,11 +9,11 @@ Initially supports Safefeed.
 Choose at least one of the web request backends, asyncio or requests
 
 ```
-pip install opoint[asyncio]
+pip install opoint[aio]
 # OR
 pip install opoint[requests]
 # OR
-pip install opoint[asyncio,requests]
+pip install opoint[aio,requests]
 ```
 
 ## Safefeed
